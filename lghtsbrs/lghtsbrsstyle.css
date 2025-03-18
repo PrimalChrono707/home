@@ -1,0 +1,14 @@
+body {
+    background-color: navy;
+    padding-left: 200px;
+    padding-right: 200px;
+    padding-top: 100px;
+    padding-bottom: 100px;
+    border: 2px solid #ff4800;
+}
+.structure {
+    border: 2px solid #ff4800;
+    background-color: rgb(48, 48, 48);
+    padding: 50px;
+    color: silver;
+}

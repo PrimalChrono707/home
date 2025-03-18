@@ -1,0 +1,24 @@
+body {
+    color: silver;
+    border: 2px solid #ff4800;
+    background-color: navy;
+    padding-top: 100px;
+    padding-bottom: 100px;
+    padding-left: 200px;
+    padding-right: 200px;
+}
+details {
+    display: block;
+}
+.structure {
+    border: 2px solid #ff4800;
+    background-color: rgb(48, 48, 48);
+    padding-left: 50px;
+    padding-right: 50px;
+    padding-top: 50px;
+    padding-bottom: 50px;
+}
+details {
+    border: 2px solid #ff4800;
+    background-color: blue;
+}
