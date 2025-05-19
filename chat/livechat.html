@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PrimalChrono707 - Live Chat</title>
+<link rel="stylesheet" href="style.css">
+
+
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+  }
+  #messages {
+    border: 1px solid #ccc;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+  }
+  .message {
+    margin: 5px 0;
+  }
+  .username {
+    font-weight: bold;
+  }
+  input[type="text"] {
+    padding: 5px;
+    margin-right: 10px;
+  }
+  button {
+    padding: 5px 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="structure">
+
+<h2>Live Chat</h2>
+
+<!-- Sign Up / Settings -->
+<label for="username">Username:</label>
+<input type="text" id="username" placeholder="Your name" />
+<label for="color">Color:</label>
+<input type="color" id="color" />
+<button id="saveSettings">Save Settings</button>
+
+<!-- Messages display -->
+<div id="messages"></div>
+
+<!-- Input for new message -->
+<input type="text" id="messageInput" placeholder="Type your message" />
+<button id="sendButton">Send</button>
+
+<script>
+  // Your Firebase config (replace with your own)
+const firebaseConfig = {
+  apiKey: "AIzaSyDquxQY27lWqHdO3NpfAoGmdTRN0KcMC_s",
+  authDomain: "live-chat-baf9e.firebaseapp.com",
+  projectId: "live-chat-baf9e",
+  storageBucket: "storageBucket: "live-chat-baf9e.appspot.com",",
+  messagingSenderId: "456153343957",
+  appId: "1:456153343957:web:3e502ef5ee76d0ae55ff5c",
+  measurementId: "G-JX24B8H95Z"
+};
+
+  // Initialize Firebase
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  // Load saved username and color
+  const usernameInput = document.getElementById('username');
+  const colorInput = document.getElementById('color');
+  const messagesDiv = document.getElementById('messages');
+  const messageInput = document.getElementById('messageInput');
+
+  const savedUsername = localStorage.getItem('username');
+  const savedColor = localStorage.getItem('color');
+
+  if (savedUsername) {
+    usernameInput.value = savedUsername;
+  }
+  if (savedColor) {
+    colorInput.value = savedColor;
+  }
+
+  document.getElementById('saveSettings').onclick = () => {
+    localStorage.setItem('username', usernameInput.value);
+    localStorage.setItem('color', colorInput.value);
+    alert('Settings saved!');
+  };
+
+  function addMessage() {
+    const username = localStorage.getItem('username') || 'Anonymous';
+    const color = localStorage.getItem('color') || '#000000';
+    const messageText = messageInput.value.trim();
+    if (messageText === "") {
+      alert('Please type a message.');
+      return;
+    }
+
+    const messagesRef = db.ref('messages');
+    messagesRef.push({
+      username,
+      color,
+      message: messageText,
+      timestamp: Date.now()
+    });
+
+    messageInput.value = '';
+  }
+
+  document.getElementById('sendButton').onclick = addMessage;
+
+  // Send message on Enter
+  messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addMessage();
+    }
+  });
+
+  // Listen for new messages
+  const messagesRef = db.ref('messages');
+  messagesRef.on('child_added', (snapshot) => {
+    const msg = snapshot.val();
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message';
+    messageDiv.innerHTML = `
+      <span class="username" style="color: ${msg.color};">${msg.username}:</span>
+      ${msg.message}
+    `;
+    messagesDiv.appendChild(messageDiv);
+    // Scroll to bottom
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  });
+</script>
+
+</div>
+
+</body>
+</html>
