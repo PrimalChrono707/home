@@ -4,11 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Live Chat with Firebase + Image Upload</title>
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js"></script>
+<!-- Firebase Compatibility SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-compat.js"></script>
 
 <style>
 body {
@@ -83,8 +80,9 @@ body {
     messagingSenderId: "YOUR_SENDER_ID",
     appId: "YOUR_APP_ID"
   };
+
   // Initialize Firebase
-  const app = firebase.initializeApp(firebaseConfig);
+  firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db = firebase.database();
   const storage = firebase.storage();
@@ -132,113 +130,107 @@ body {
     listenForMessages();
   }
 
-  // Auth functions
-  function signUp() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    auth.createUserWithEmailAndPassword(email, password)
-      .then(() => alert('Sign Up successful! Please log in.'))
-      .catch(e => alert('Error: ' + e.message));
-  }
+  // Sign Up
+function signUp() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(() => alert('Sign Up successful! Please log in.'))
+    .catch(e => alert('Error: ' + e.message));
+}
 
-  function signIn() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    auth.signInWithEmailAndPassword(email, password)
-      .then(() => alert('Signed in!'))
-      .catch(e => alert('Error: ' + e.message));
-  }
+// Sign In
+function signIn() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => alert('Signed in!'))
+    .catch(e => alert('Error: ' + e.message));
+}
 
-  function logout() {
-    auth.signOut();
-  }
+// Logout
+function logout() {
+  auth.signOut();
+}
 
-  function saveProfile() {
-    const uname = document.getElementById('username').value.trim();
-    const col = document.getElementById('color').value;
-    if (uname) {
-      localStorage.setItem('username', uname);
-      localStorage.setItem('color', col);
-      username = uname;
-      color = col;
-      alert('Profile saved!');
+// Save profile info
+function saveProfile() {
+  const uname = document.getElementById('username').value.trim();
+  const col = document.getElementById('color').value;
+  if (uname) {
+    localStorage.setItem('username', uname);
+    localStorage.setItem('color', col);
+    username = uname;
+    color = col;
+    alert('Profile saved!');
+  } else {
+    alert('Enter a username.');
+  }
+}
+
+// Send message
+function sendMessage() {
+  const messageText = document.getElementById('messageInput').value.trim();
+  if (!messageText) return;
+  const user = auth.currentUser;
+  if (!user) { alert('Not logged in!'); return; }
+  const messagesRef = firebase.database().ref('messages');
+  messagesRef.push({
+    username: localStorage.getItem('username') || 'Anonymous',
+    color: localStorage.getItem('color') || '#ffffff',
+    message: messageText,
+    timestamp: Date.now()
+  });
+  document.getElementById('messageInput').value = '';
+}
+
+// Listen for new messages
+function listenForMessages() {
+  const messagesRef = firebase.database().ref('messages');
+  messagesRef.on('child_added', snapshot => {
+    const msg = snapshot.val();
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'message';
+    if (msg.imageUrl) {
+      const img = document.createElement('img');
+      img.src = msg.imageUrl;
+      img.style.maxWidth = '200px';
+      img.style.display = 'block';
+      msgDiv.innerHTML = `<span class="username" style="color: ${msg.color};">${msg.username}:</span>`;
+      msgDiv.appendChild(img);
     } else {
-      alert('Enter a username.');
+      msgDiv.innerHTML = `<span class="username" style="color: ${msg.color};">${msg.username}:</span> ${msg.message}`;
     }
-  }
+    messagesDiv.appendChild(msgDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  });
+}
 
-  // Send message
-  function sendMessage() {
-    const messageText = document.getElementById('messageInput').value.trim();
-    if (!messageText) return;
-    const user = auth.currentUser;
-    if (!user) { alert('Not logged in!'); return; }
-    const messagesRef = db.ref('messages');
-    messagesRef.push({
-      username: localStorage.getItem('username') || 'Anonymous',
-      color: localStorage.getItem('color') || '#ffffff',
-      message: messageText,
-      timestamp: Date.now()
-    });
-    document.getElementById('messageInput').value = '';
-  }
-
-  // Listen for new messages
-  function listenForMessages() {
-    const messagesRef = db.ref('messages');
-    messagesRef.on('child_added', snapshot => {
-      const msg = snapshot.val();
-      const msgDiv = document.createElement('div');
-      msgDiv.className = 'message';
-      // Check if message has an image URL
-      if (msg.imageUrl) {
-        // Display image
-        const img = document.createElement('img');
-        img.src = msg.imageUrl;
-        img.style.maxWidth = '200px';
-        img.style.display = 'block';
-        msgDiv.innerHTML = `<span class="username" style="color: ${msg.color};">${msg.username}:</span>`;
-        msgDiv.appendChild(img);
-      } else {
-        // Regular text message
-        msgDiv.innerHTML = `<span class="username" style="color: ${msg.color};">${msg.username}:</span> ${msg.message}`;
-      }
-      messagesDiv.appendChild(msgDiv);
-      // Scroll to bottom
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    });
-  }
-
-  // Upload image function
-  function uploadImage() {
-    const fileInput = document.getElementById('imageUpload');
-    const file = fileInput.files[0];
-    if (!file) {
-      alert('Please select an image to upload.');
-      return;
-    }
-    const user = auth.currentUser;
-    if (!user) { alert('Please sign in first!'); return; }
-
-    const storageRef = storage.ref('images/' + Date.now() + '_' + file.name);
-    storageRef.put(file).then(snapshot => {
-      snapshot.ref.getDownloadURL().then(downloadURL => {
-        // Save the image URL as a message
-        const messagesRef = db.ref('messages');
-        messagesRef.push({
-          username: localStorage.getItem('username') || 'Anonymous',
-          color: localStorage.getItem('color') || '#ffffff',
-          message: '', // optional, you can add caption here
-          imageUrl: downloadURL,
-          timestamp: Date.now()
-        });
-        fileInput.value = ''; // clear file input
-        alert('Image uploaded!');
+// Upload image
+function uploadImage() {
+  const fileInput = document.getElementById('imageUpload');
+  const file = fileInput.files[0];
+  if (!file) { alert('Please select an image'); return; }
+  const user = auth.currentUser;
+  if (!user) { alert('Please sign in first!'); return; }
+  const storageRef = firebase.storage().ref('images/' + Date.now() + '_' + file.name);
+  storageRef.put(file).then(snapshot => {
+    snapshot.ref.getDownloadURL().then(downloadURL => {
+      // Save message with image URL
+      firebase.database().ref('messages').push({
+        username: localStorage.getItem('username') || 'Anonymous',
+        color: localStorage.getItem('color') || '#ffffff',
+        message: '', // optional caption
+        imageUrl: downloadURL,
+        timestamp: Date.now()
       });
-    }).catch(e => {
-      alert('Upload failed: ' + e.message);
+      document.getElementById('imageUpload').value = '';
+      alert('Image uploaded!');
     });
-  }
+  }).catch(e => {
+    alert('Upload failed: ' + e.message);
+  });
+}
 </script>
 </body>
 </html>
